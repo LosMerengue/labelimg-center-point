@@ -37,6 +37,8 @@ class Shape(object):
     point_size = 16
     scale = 1.0
     label_font_size = 8
+    center_point_color = QColor(255, 255, 0, 255)
+    show_center_point = True
 
     def __init__(self, label=None, line_color=None, difficult=False, paint_label=False):
         self.label = label
@@ -134,6 +136,35 @@ class Shape(object):
                 color = self.select_fill_color if self.selected else self.fill_color
                 painter.fillPath(line_path, color)
 
+            self.paint_center_point(painter)
+
+    def center_point(self):
+        if len(self.points) < 2:
+            return None
+
+        rect = self.bounding_rect()
+        return rect.center()
+
+    def paint_center_point(self, painter):
+        if not Shape.show_center_point:
+            return
+
+        center = self.center_point()
+        if center is None:
+            return
+
+        pen = QPen(self.center_point_color)
+        pen.setWidth(max(1, int(round(2.0 / self.scale))))
+        painter.setPen(pen)
+
+        radius = max(2.0, 4.0 / self.scale)
+        cross_half = max(4.0, 8.0 / self.scale)
+        painter.drawEllipse(center, radius, radius)
+        painter.drawLine(QPointF(center.x() - cross_half, center.y()),
+                         QPointF(center.x() + cross_half, center.y()))
+        painter.drawLine(QPointF(center.x(), center.y() - cross_half),
+                         QPointF(center.x(), center.y() + cross_half))
+
     def draw_vertex(self, path, i):
         d = self.point_size / self.scale
         shape = self.point_type
@@ -168,6 +199,8 @@ class Shape(object):
         path = QPainterPath(self.points[0])
         for p in self.points[1:]:
             path.lineTo(p)
+        if len(self.points) > 2:
+            path.closeSubpath()
         return path
 
     def bounding_rect(self):

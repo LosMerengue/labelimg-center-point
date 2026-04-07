@@ -33,6 +33,7 @@ class Canvas(QWidget):
     CREATE, EDIT = list(range(2))
 
     epsilon = 24.0
+    vertex_epsilon = 8.0
 
     def __init__(self, *args, **kwargs):
         super(Canvas, self).__init__(*args, **kwargs)
@@ -108,6 +109,9 @@ class Canvas(QWidget):
     def selected_vertex(self):
         return self.h_vertex is not None
 
+    def current_vertex_epsilon(self):
+        return max(4.0, self.vertex_epsilon / self.scale)
+
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         pos = self.transform_pos(ev.pos())
@@ -165,7 +169,7 @@ class Canvas(QWidget):
             return
 
         # Polygon copy moving.
-        if Qt.RightButton & ev.buttons():
+        if ev.buttons() & Qt.RightButton:
             if self.selected_shape_copy and self.prev_point:
                 self.override_cursor(CURSOR_MOVE)
                 self.bounded_move_shape(self.selected_shape_copy, pos)
@@ -176,7 +180,7 @@ class Canvas(QWidget):
             return
 
         # Polygon/Vertex moving.
-        if Qt.LeftButton & ev.buttons():
+        if ev.buttons() & Qt.LeftButton:
             if self.selected_vertex():
                 self.bounded_move_vertex(pos)
                 self.shapeMoved.emit()
@@ -219,7 +223,7 @@ class Canvas(QWidget):
         for shape in reversed([s for s in priority_list if self.isVisible(s)]):
             # Look for a nearby vertex to highlight. If that fails,
             # check if we happen to be inside a shape.
-            index = shape.nearest_vertex(pos, self.epsilon)
+            index = shape.nearest_vertex(pos, self.current_vertex_epsilon())
             if index is not None:
                 if self.selected_vertex():
                     self.h_shape.highlight_clear()
@@ -509,7 +513,7 @@ class Canvas(QWidget):
         if self.overlay_color:
             temp = QPixmap(self.pixmap)
             painter = QPainter(temp)
-            painter.setCompositionMode(painter.CompositionMode_Overlay)
+            painter.setCompositionMode(QPainter.CompositionMode_Overlay)
             painter.fillRect(temp.rect(), self.overlay_color)
             painter.end()
 
@@ -536,6 +540,7 @@ class Canvas(QWidget):
             brush = QBrush(Qt.BDiagPattern)
             p.setBrush(brush)
             p.drawRect(int(left_top.x()), int(left_top.y()), int(rect_width), int(rect_height))
+            self.paint_rect_center_point(p, left_top, right_bottom)
 
         if self.drawing() and not self.prev_point.isNull() and not self.out_of_pixmap(self.prev_point):
             p.setPen(QColor(0, 0, 0))
@@ -553,6 +558,21 @@ class Canvas(QWidget):
             self.setPalette(pal)
 
         p.end()
+
+    def paint_rect_center_point(self, painter, point1, point2):
+        center = QPointF((point1.x() + point2.x()) / 2.0,
+                         (point1.y() + point2.y()) / 2.0)
+        pen = QPen(Shape.center_point_color)
+        pen.setWidth(max(1, int(round(2.0 / self.scale))))
+        painter.setPen(pen)
+
+        radius = max(2.0, 4.0 / self.scale)
+        cross_half = max(4.0, 8.0 / self.scale)
+        painter.drawEllipse(center, radius, radius)
+        painter.drawLine(QPointF(center.x() - cross_half, center.y()),
+                         QPointF(center.x() + cross_half, center.y()))
+        painter.drawLine(QPointF(center.x(), center.y() - cross_half),
+                         QPointF(center.x(), center.y() + cross_half))
 
     def transform_pos(self, point):
         """Convert from widget-logical coordinates to painter-logical coordinates."""

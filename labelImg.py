@@ -210,7 +210,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.file_dock.setFeatures(QDockWidget.DockWidgetFloatable)
 
         self.dock_features = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
-        self.dock.setFeatures(self.dock.features() ^ self.dock_features)
+        self.dock.setFeatures(QDockWidget.DockWidgetFeatures(int(self.dock.features()) ^ int(self.dock_features)))
 
         # Actions
         action = partial(new_action, self)
@@ -425,6 +425,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.display_label_option.setCheckable(True)
         self.display_label_option.setChecked(settings.get(SETTING_PAINT_LABEL, False))
         self.display_label_option.triggered.connect(self.toggle_paint_labels_option)
+        self.display_center_point_option = QAction(get_str('displayCenterPoint'), self)
+        self.display_center_point_option.setCheckable(True)
+        self.display_center_point_option.setChecked(settings.get(SETTING_SHOW_CENTER_POINT, True))
+        self.display_center_point_option.triggered.connect(self.toggle_center_point_option)
 
         add_actions(self.menus.file,
                     (open, open_dir, change_save_dir, open_annotation, copy_prev_bounding, self.menus.recentFiles, save, save_format, save_as, close, reset_all, delete_image, quit))
@@ -433,6 +437,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.auto_saving,
             self.single_class_mode,
             self.display_label_option,
+            self.display_center_point_option,
             labels, advanced_mode, None,
             hide_all, show_all, None,
             zoom_in, zoom_out, zoom_org, None,
@@ -503,6 +508,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.restoreState(settings.get(SETTING_WIN_STATE, QByteArray()))
         Shape.line_color = self.line_color = QColor(settings.get(SETTING_LINE_COLOR, DEFAULT_LINE_COLOR))
         Shape.fill_color = self.fill_color = QColor(settings.get(SETTING_FILL_COLOR, DEFAULT_FILL_COLOR))
+        Shape.show_center_point = settings.get(SETTING_SHOW_CENTER_POINT, True)
         self.canvas.set_drawing_color(self.line_color)
         # Add chris
         Shape.difficult = self.difficult
@@ -1272,6 +1278,7 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_AUTO_SAVE] = self.auto_saving.isChecked()
         settings[SETTING_SINGLE_CLASS] = self.single_class_mode.isChecked()
         settings[SETTING_PAINT_LABEL] = self.display_label_option.isChecked()
+        settings[SETTING_SHOW_CENTER_POINT] = self.display_center_point_option.isChecked()
         settings[SETTING_DRAW_SQUARE] = self.draw_squares_option.isChecked()
         settings[SETTING_LABEL_FILE_FORMAT] = self.label_file_format
         settings.save()
@@ -1665,6 +1672,11 @@ class MainWindow(QMainWindow, WindowMixin):
     def toggle_paint_labels_option(self):
         for shape in self.canvas.shapes:
             shape.paint_label = self.display_label_option.isChecked()
+        self.canvas.update()
+
+    def toggle_center_point_option(self):
+        Shape.show_center_point = self.display_center_point_option.isChecked()
+        self.canvas.update()
 
     def toggle_draw_square(self):
         self.canvas.set_drawing_shape_to_square(self.draw_squares_option.isChecked())
