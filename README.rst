@@ -23,6 +23,11 @@ It keeps the original upstream license and includes local modifications, includi
 - a UI toggle to show or hide center points
 - improved hit detection when dragging small boxes
 
+.. image:: /demo/demo_centerpoint1.png
+     :alt: Center point display example
+
+To disable the center point display, open ``View`` and uncheck ``Display Center Point``.
+
 .. image:: https://img.shields.io/pypi/v/labelimg.svg
         :target: https://pypi.python.org/pypi/labelimg
 
