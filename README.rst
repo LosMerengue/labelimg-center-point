@@ -12,6 +12,17 @@ LabelImg, the popular image annotation tool created by Tzutalin with the help of
 About LabelImg
 ========
 
+Fork Notice
+-----------
+
+This repository is based on `HumanSignal/labelImg <https://github.com/HumanSignal/labelImg>`__.
+
+It keeps the original upstream license and includes local modifications, including:
+
+- optional center point display for bounding boxes
+- a UI toggle to show or hide center points
+- improved hit detection when dragging small boxes
+
 .. image:: https://img.shields.io/pypi/v/labelimg.svg
         :target: https://pypi.python.org/pypi/labelimg
 
@@ -314,4 +325,3 @@ Stargazers over time
 ~~~~~~~~~~~~~~~~~~~~
 
 .. image:: https://starchart.cc/tzutalin/labelImg.svg
-
